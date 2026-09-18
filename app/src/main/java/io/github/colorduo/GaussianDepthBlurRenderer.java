@@ -14,86 +14,51 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** GPU scattering pyramid prepared off the UI thread; frames sample two neighboring mip levels.
+/** GPU Gaussian pyramid prepared off the UI thread; frames sample two neighboring mip levels.
  * Architecture inspired by Mac-Duo (Makito); Android implementation uses public HWUI APIs.
  */
-public final class DepthBlurRenderer implements PageRenderer {
-    public static final String ENGINE = "frosted-scattering-pyramid";
+public final class GaussianDepthBlurRenderer implements PageRenderer {
+    public static final String ENGINE = "two-sampler-gpu-pyramid-draw";
     private static final int LEVELS = 7;
-    // A fixed pattern in page-local coordinates: no per-frame random seed or shimmer.
-    private static final String FROST_COMMON = """
-            uniform float pageWidth; uniform float spanDp; uniform float farRight;
-            uniform float density; uniform float3 depths; uniform float2 onset;
-            float3 frostNoise(float2 p) {
-                float3 v=fract(float3(p.x,p.y,p.x)*float3(0.1031,0.1030,0.0973));
-                v+=dot(v,v.yxz+33.33);
-                return fract((v.xxy+v.yzz)*v.zyx);
-            }
-            float frostAmount(float2 p) {
-                float x=clamp(p.x/pageWidth,0.0,1.0);
-                float d=spanDp*mix(1.0-x,x,farRight);
-                float amount=min(d/onset.x,1.0)*onset.y
-                    +max(d-onset.x,0.0)*(1.0-onset.y)/(depths.y-onset.x);
-                return clamp(amount,0.0,1.0);
-            }
-            half4 frostFinish(half4 c,float amount,float grain) {
-                // Premultiplied operations: tint/grain can never fill transparent space.
-                half a=c.a;
-                half luminance=dot(c.rgb,half3(0.2126,0.7152,0.0722));
-                half3 rgb=mix(c.rgb,half3(luminance),half(amount*0.12));
-                rgb=mix(rgb,half3(a),half(amount*0.035));
-                rgb+=half3(half((grain-0.5)*0.018*amount)*a);
-                return half4(clamp(rgb,half3(0.0),half3(a)),a);
-            }
-            """;
-    private static final String PROGRAM = FROST_COMMON + """
+    private static final String PROGRAM = """
             uniform shader content;
             uniform shader mip1; uniform shader mip2; uniform shader mip3;
             uniform shader mip4; uniform shader mip5; uniform shader mip6; uniform shader mip7;
+            uniform float pageWidth;
+            uniform float spanDp;
+            uniform float farRight;
+            uniform float density;
+            uniform float3 depths;
             half4 main(float2 p) {
-                float amount=frostAmount(p);
-                float radius=depths.z*amount*density;
-                float3 noise=frostNoise(floor(p/max(1.0,density*0.28)));
-                float2 q=p+(noise.xy-0.5)*radius*0.7;
-                float lod=clamp(log2(max(radius*0.6/1.1547,1.0)),0.0,7.0);
-                half4 c;
-                if (lod<1.0) c=mix(content.eval(q),mip1.eval(q),half(lod));
-                else if (lod<2.0) c=mix(mip1.eval(q),mip2.eval(q),half(lod-1.0));
-                else if (lod<3.0) c=mix(mip2.eval(q),mip3.eval(q),half(lod-2.0));
-                else if (lod<4.0) c=mix(mip3.eval(q),mip4.eval(q),half(lod-3.0));
-                else if (lod<5.0) c=mix(mip4.eval(q),mip5.eval(q),half(lod-4.0));
-                else if (lod<6.0) c=mix(mip5.eval(q),mip6.eval(q),half(lod-5.0));
-                else c=mix(mip6.eval(q),mip7.eval(q),half(lod-6.0));
-                return frostFinish(c,amount,noise.z);
+                float x = clamp(p.x / pageWidth, 0.0, 1.0);
+                float depth = spanDp * mix(1.0-x, x, farRight);
+                float t = clamp((depth-depths.x)/(depths.y-depths.x), 0.0, 1.0);
+                float radius = depths.z * t*t*(3.0-2.0*t) * density;
+                // Each level halves the image and applies a 1px Gaussian. Its equivalent
+                // source-space sigma approaches 1.1547 * 2^level. Keep the original 26dp strength.
+                float lod = clamp(log2(max(radius/1.1547, 1.0)), 0.0, 7.0);
+                if (lod < 1.0) return mix(content.eval(p), mip1.eval(p), half(lod));
+                if (lod < 2.0) return mix(mip1.eval(p), mip2.eval(p), half(lod-1.0));
+                if (lod < 3.0) return mix(mip2.eval(p), mip3.eval(p), half(lod-2.0));
+                if (lod < 4.0) return mix(mip3.eval(p), mip4.eval(p), half(lod-3.0));
+                if (lod < 5.0) return mix(mip4.eval(p), mip5.eval(p), half(lod-4.0));
+                if (lod < 6.0) return mix(mip5.eval(p), mip6.eval(p), half(lod-5.0));
+                return mix(mip6.eval(p), mip7.eval(p), half(lod-6.0));
             }
             """;
-    private static final String STRIP_PROGRAM = FROST_COMMON + """
-            uniform shader low; uniform shader high; uniform float baseLod;
+    // Draw only the geometric interval belonging to each LOD pair. Every fragment uses
+    // exactly two samplers, with the same continuous radius/LOD curve as PROGRAM.
+    private static final String STRIP_PROGRAM = """
+            uniform shader low; uniform shader high;
+            uniform float pageWidth; uniform float spanDp; uniform float farRight;
+            uniform float density; uniform float3 depths; uniform float baseLod;
             half4 main(float2 p) {
-                float amount=frostAmount(p);
-                float radius=depths.z*amount*density;
-                float3 noise=frostNoise(floor(p/max(1.0,density*0.28)));
-                float2 q=p+(noise.xy-0.5)*radius*0.7;
-                float lod=log2(max(radius*0.6/1.1547,1.0));
-                half4 c=mix(low.eval(q),high.eval(q),half(clamp(lod-baseLod,0.0,1.0)));
-                return frostFinish(c,amount,noise.z);
-            }
-            """;
-    // Prepared once per cached level on the GPU worker, not during page transitions.
-    // Bounded disk scattering replaces the previous Gaussian RenderEffect.
-    private static final String SCATTER_PROGRAM = """
-            uniform shader source;
-            half4 main(float2 p) {
-                half4 c=source.eval(p)*0.2;
-                c+=source.eval(p+float2(1.55,0.12))*0.1;
-                c+=source.eval(p+float2(-1.55,-0.12))*0.1;
-                c+=source.eval(p+float2(0.18,1.58))*0.1;
-                c+=source.eval(p+float2(-0.18,-1.58))*0.1;
-                c+=source.eval(p+float2(1.12,1.04))*0.1;
-                c+=source.eval(p+float2(-1.12,-1.04))*0.1;
-                c+=source.eval(p+float2(-1.05,1.20))*0.1;
-                c+=source.eval(p+float2(1.05,-1.20))*0.1;
-                return c;
+                float x=clamp(p.x/pageWidth,0.0,1.0);
+                float depth=spanDp*mix(1.0-x,x,farRight);
+                float t=clamp((depth-depths.x)/(depths.y-depths.x),0.0,1.0);
+                float radius=depths.z*t*t*(3.0-2.0*t)*density;
+                float lod=log2(max(radius/1.1547,1.0));
+                return mix(low.eval(p),high.eval(p),half(clamp(lod-baseLod,0.0,1.0)));
             }
             """;
     private static final ExecutorService GPU = Executors.newSingleThreadExecutor(r -> {
@@ -138,7 +103,7 @@ public final class DepthBlurRenderer implements PageRenderer {
             }
             if (oldest != null) { Pyramid stale=pages.remove(oldest); stale.cancelled=true; }
         }
-        Pyramid pyramid = new Pyramid(page.getWidth(), page.getHeight(), (int)Math.ceil(3f*DepthModel.MAX_RADIUS_DP*page.getResources().getDisplayMetrics().density));
+        Pyramid pyramid = new Pyramid(page.getWidth(), page.getHeight(), (int)Math.ceil(3f*GaussianDepthModel.MAX_RADIUS_DP*page.getResources().getDisplayMetrics().density));
         pages.put(page, pyramid);
         WeakReference<View> target = new WeakReference<>(page);
         main.post(() -> record(target, pyramid));
@@ -179,7 +144,7 @@ public final class DepthBlurRenderer implements PageRenderer {
                         HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE | HardwareBuffer.USAGE_GPU_COLOR_OUTPUT);
                 try {
                     node.setPosition(0,0,outW,outH);
-                    if (level>0) node.setRenderEffect(RenderEffect.createRuntimeShaderEffect(new RuntimeShader(SCATTER_PROGRAM),"source"));
+                    if (level>0) node.setRenderEffect(RenderEffect.createBlurEffect(1f,1f,Shader.TileMode.DECAL));
                     RecordingCanvas canvas=node.beginRecording(outW,outH);
                     canvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
                     canvas.scale((float)outW/w,(float)outH/h);
@@ -230,11 +195,10 @@ public final class DepthBlurRenderer implements PageRenderer {
                 strip.setInputShader("high",samplers[i+1]);
                 strip.setFloatUniform("pageWidth",pyramid.width);
                 strip.setFloatUniform("density",density);
-                strip.setFloatUniform("depths",DepthModel.FOCUS_DEPTH_DP,DepthModel.FULL_BLUR_DEPTH_DP,DepthModel.MAX_RADIUS_DP);
-                strip.setFloatUniform("onset",DepthModel.ONSET_DEPTH_DP,DepthModel.ONSET_FRACTION);
+                strip.setFloatUniform("depths",GaussianDepthModel.FOCUS_DEPTH_DP,GaussianDepthModel.FULL_BLUR_DEPTH_DP,GaussianDepthModel.MAX_RADIUS_DP);
                 strip.setFloatUniform("baseLod",i);
                 strips[i]=strip;
-                boundaryDepths[i]=DepthModel.depthForRadius(1.1547f*(1<<i)/(density*0.6f));
+                boundaryDepths[i]=GaussianDepthModel.depthForRadius(1.1547f*(1<<i)/density);
             }
             main.post(() -> {
                 View page=target.get();
@@ -260,7 +224,7 @@ public final class DepthBlurRenderer implements PageRenderer {
     public boolean canDraw(View page) {
         if (stopped || recording) return false;
         float density=page.getResources().getDisplayMetrics().density;
-        if (DepthModel.spanDp(page.getWidth(),density,page.getRotationY())<=DepthModel.FOCUS_DEPTH_DP) return false;
+        if (GaussianDepthModel.spanDp(page.getWidth(),density,page.getRotationY())<=GaussianDepthModel.FOCUS_DEPTH_DP) return false;
         prepare(page,false);
         Pyramid pyramid=pages.get(page);
         return pyramid!=null && !pyramid.pending && !pyramid.cancelled && pyramid.shader!=null;
@@ -270,18 +234,17 @@ public final class DepthBlurRenderer implements PageRenderer {
         if (!canDraw(page)) return null;
         Pyramid pyramid=pages.get(page);
         float density=page.getResources().getDisplayMetrics().density;
-        float span=DepthModel.spanDp(page.getWidth(),density,page.getRotationY());
+        float span=GaussianDepthModel.spanDp(page.getWidth(),density,page.getRotationY());
         page.getMatrix().getValues(matrix);
         float perspective=matrix[Matrix.MPERSP_0];
         if (!Float.isFinite(perspective) || perspective==0f) return null;
         pyramid.lastUsed=SystemClock.uptimeMillis();
         RuntimeShader shader=pyramid.shader;
-        shader.setFloatUniform("onset",DepthModel.ONSET_DEPTH_DP,DepthModel.ONSET_FRACTION);
         shader.setFloatUniform("pageWidth",page.getWidth());
         shader.setFloatUniform("spanDp",span);
         shader.setFloatUniform("farRight",perspective>0?1f:0f);
         shader.setFloatUniform("density",density);
-        shader.setFloatUniform("depths",DepthModel.FOCUS_DEPTH_DP,DepthModel.FULL_BLUR_DEPTH_DP,DepthModel.MAX_RADIUS_DP);
+        shader.setFloatUniform("depths",GaussianDepthModel.FOCUS_DEPTH_DP,GaussianDepthModel.FULL_BLUR_DEPTH_DP,GaussianDepthModel.MAX_RADIUS_DP);
         return pyramid;
     }
 
@@ -290,12 +253,12 @@ public final class DepthBlurRenderer implements PageRenderer {
         if (!canvas.isHardwareAccelerated()) return false;
         Pyramid pyramid=configure(page);
         if (pyramid==null) return false;
-        float span=DepthModel.spanDp(page.getWidth(),page.getResources().getDisplayMetrics().density,page.getRotationY());
+        float span=GaussianDepthModel.spanDp(page.getWidth(),page.getResources().getDisplayMetrics().density,page.getRotationY());
         boolean farRight=matrix[Matrix.MPERSP_0]>0;
         float width=page.getWidth(), padding=pyramid.padding;
         for (int i=0;i<LEVELS;i++) {
-            float near=i==0 ? -padding : DepthModel.lodBoundary(width,padding,pyramid.boundaryDepths[i],span);
-            float far=i==LEVELS-1 ? width+padding : DepthModel.lodBoundary(width,padding,pyramid.boundaryDepths[i+1],span);
+            float near=i==0 ? -padding : GaussianDepthModel.lodBoundary(width,padding,pyramid.boundaryDepths[i],span);
+            float far=i==LEVELS-1 ? width+padding : GaussianDepthModel.lodBoundary(width,padding,pyramid.boundaryDepths[i+1],span);
             if (far<=near) continue;
             RuntimeShader strip=pyramid.strips[i];
             strip.setFloatUniform("spanDp",span);

@@ -13,12 +13,13 @@ import android.widget.TextView;
 
 /** Uses the same renderer as the launcher; also provides a safe shader smoke-test surface. */
 public final class DepthPreviewActivity extends Activity {
-    private final DepthBlurRenderer renderer = new DepthBlurRenderer();
+    private PageRenderer renderer;
     private View card;
     private TextView caption;
     private float angle = 16.7f;
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        renderer=PageRenderer.create(EffectSettings.readLocal(this));
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         int dp = (int) getResources().getDisplayMetrics().density;

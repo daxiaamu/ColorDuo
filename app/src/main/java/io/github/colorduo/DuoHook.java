@@ -22,7 +22,10 @@ public final class DuoHook implements IXposedHookLoadPackage {
         final boolean clip; int layer;
         PageState(ViewGroup page) { clip=page.getClipChildren(); layer=page.getLayerType(); }
     }
-    private DepthBlurRenderer depthRenderer;
+    private PageRenderer depthRenderer;
+    private int effectMode=EffectMode.FROST;
+    private EffectSettings.Watcher settingsWatcher;
+    private java.lang.ref.WeakReference<ViewGroup> currentWorkspace=new java.lang.ref.WeakReference<>(null);
     private Field workspaceField, launcherField, normalStateField;
     private Method rangeMethod, switchingMethod, stateMethod, interceptMethod;
     private final StartupGate startup = new StartupGate();
@@ -46,6 +49,13 @@ public final class DuoHook implements IXposedHookLoadPackage {
                     Activity activity = (Activity) p.thisObject;
                     boolean ready = "com.android.launcher.Launcher".equals(activity.getClass().getName())
                             && !activity.isFinishing() && !activity.isDestroyed();
+                    if (ready) {
+                        try {
+                            currentWorkspace=new java.lang.ref.WeakReference<>((ViewGroup)XposedHelpers.callMethod(activity,"getWorkspace"));
+                            if (settingsWatcher==null) settingsWatcher=new EffectSettings.Watcher(activity,DuoHook.this::applyEffectMode);
+                            else settingsWatcher.refresh();
+                        } catch (Throwable error) { android.util.Log.w("ColorDuoSettings","Settings unavailable",error); }
+                    }
                     startup.runWhenReady(ready, () -> {
                         install(pkg.classLoader);
                         activity.getWindow().getDecorView().postDelayed(() -> {
@@ -56,7 +66,7 @@ public final class DuoHook implements IXposedHookLoadPackage {
                     });
                 }
             });
-            XposedBridge.log("ColorDuo 0.3.2: waiting for launcher onPostResume");
+            XposedBridge.log("ColorDuo 0.5.0: waiting for launcher onPostResume");
         } catch (Throwable error) { disable(error); }
     }
 
@@ -141,8 +151,22 @@ public final class DuoHook implements IXposedHookLoadPackage {
                     catch (Throwable error) { disable(error); }
                 }
             });
-            XposedBridge.log("ColorDuo 0.3.2: Slant adapter installed after launcher resume (baseline 16.6.17)");
+            XposedBridge.log("ColorDuo 0.5.0: Slant adapter installed after launcher resume (baseline 16.6.17)");
         } catch (Throwable error) { disable(error); }
+    }
+
+    private void applyEffectMode(int selected) {
+        int mode=EffectMode.normalize(selected);
+        if (failed || mode==effectMode) return;
+        clearAll(); warmGeneration++;
+        if (depthRenderer!=null) depthRenderer.release();
+        depthRenderer=null; effectMode=mode;
+        ViewGroup workspace=currentWorkspace.get();
+        if (workspace!=null && workspace.isAttachedToWindow()) {
+            warmPages(workspace,true);
+            workspace.invalidate();
+        }
+        android.util.Log.i("ColorDuoSettings","Applied effect="+mode+" without launcher restart");
     }
 
     private void warmPages(ViewGroup workspace, boolean refresh) {
@@ -150,7 +174,7 @@ public final class DuoHook implements IXposedHookLoadPackage {
             Object controller=XposedHelpers.getObjectField(workspace,"mEffectController");
             Object agent=XposedHelpers.callMethod(controller,"getEffectAgent");
             if (agent==null || !SLANT.equals(agent.getClass().getName())) return;
-            if (depthRenderer == null) depthRenderer = new DepthBlurRenderer();
+            if (depthRenderer == null) depthRenderer = PageRenderer.create(effectMode);
             int current = (Integer) XposedHelpers.callMethod(workspace, "getCurrentPage");
             for (int i=Math.max(0,current-1); i<=Math.min(workspace.getChildCount()-1,current+1); i++)
                 depthRenderer.prepare(workspace.getChildAt(i), refresh);
@@ -171,7 +195,7 @@ public final class DuoHook implements IXposedHookLoadPackage {
         if (range == null || range.length < 2 || range[0] < 0 || range[1] <= range[0]) {
             clearAll(); return;
         }
-        if (depthRenderer == null) depthRenderer = new DepthBlurRenderer();
+        if (depthRenderer == null) depthRenderer = PageRenderer.create(effectMode);
         cleanup.clear();
         cleanup.addAll(active.keySet());
         for (int indexToClean = 0; indexToClean < cleanup.size(); indexToClean++) {

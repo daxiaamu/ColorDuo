@@ -1,0 +1,4 @@
+<resources>
+    <item name="effect_gaussian" type="id" />
+    <item name="effect_frost" type="id" />
+</resources>

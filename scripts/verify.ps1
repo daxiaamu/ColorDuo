@@ -18,6 +18,6 @@ try {
     if (-not $junit -or -not $hamcrest) { throw 'JUnit dependencies missing.' }
     $classpath = "app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes;app/build/intermediates/javac/debugUnitTest/compileDebugUnitTestJavaWithJavac/classes;$junit;$hamcrest"
     $javaExe = if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME 'bin/java.exe' } else { 'java' }
-    & $javaExe -cp $classpath org.junit.runner.JUnitCore io.github.colorduo.StartupGateTest io.github.colorduo.DepthModelTest
+    & $javaExe -cp $classpath org.junit.runner.JUnitCore io.github.colorduo.StartupGateTest io.github.colorduo.DepthModelTest io.github.colorduo.EffectModeTest
     if ($LASTEXITCODE -ne 0) { throw 'Curve tests failed.' }
 } finally { Pop-Location }

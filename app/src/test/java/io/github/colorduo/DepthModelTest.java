@@ -9,18 +9,31 @@ public class DepthModelTest {
     }
     @Test public void oneCardHasContinuousDepthGradient() {
         float previous = 0;
-        for (int i = 0; i <= 100; i++) {
-            float radius = DepthModel.radiusDp(i / 100f, true, 110);
+        for (int i = 0; i <= 10000; i++) {
+            float radius = DepthModel.radiusDp(i / 10000f, true, 110);
             assertTrue(radius >= previous);
-            assertTrue(radius - previous < 0.5f);
+            assertTrue(radius - previous < 0.05f);
             previous = radius;
         }
         assertEquals(26, previous, 0);
         assertTrue(DepthModel.radiusDp(.25f, true, 110) < DepthModel.radiusDp(.75f, true, 110));
     }
+    private float radiusAtDepth(float depth) { return DepthModel.radiusDp(1f,true,depth); }
+    @Test public void smallDepartureImmediatelyProducesVisibleFrost() {
+        assertEquals(0f,radiusAtDepth(0f),0f);
+        assertTrue(radiusAtDepth(0.001f)<0.01f);
+        assertTrue(radiusAtDepth(1f)>1.7f);
+        assertEquals(5.2f,radiusAtDepth(3f),0.0001f);
+    }
+    @Test public void afterOnsetTheCurveIsLinearAndContinuous() {
+        assertEquals(radiusAtDepth(3f-0.0001f),radiusAtDepth(3f+0.0001f),0.001f);
+        assertEquals(radiusAtDepth(30f)-radiusAtDepth(20f),
+                radiusAtDepth(80f)-radiusAtDepth(70f),0.0001f);
+        assertEquals(26f,radiusAtDepth(200f),0f);
+    }
     @Test public void oppositeTiltsMirrorTheDepthMap() {
-        for (int i = 0; i <= 100; i++) {
-            float x = i / 100f;
+        for (int i = 0; i <= 10000; i++) {
+            float x = i / 10000f;
             assertEquals(DepthModel.radiusDp(x, true, 110), DepthModel.radiusDp(1-x, false, 110), .0001f);
         }
     }

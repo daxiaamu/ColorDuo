@@ -1,13 +1,11 @@
 package io.github.colorduo;
 
 /** Virtual card behind the glass: its closest edge is on the focus plane. */
-public final class DepthModel {
-    public static final float FOCUS_DEPTH_DP = 0f;
+public final class GaussianDepthModel {
+    public static final float FOCUS_DEPTH_DP = 4f;
     public static final float FULL_BLUR_DEPTH_DP = 110f;
     public static final float MAX_RADIUS_DP = 26f;
-    public static final float ONSET_DEPTH_DP = 3f;
-    public static final float ONSET_FRACTION = 0.20f;
-    private DepthModel() {}
+    private GaussianDepthModel() {}
     public static float spanDp(float widthPx, float density, float rotationY) {
         if (!Float.isFinite(widthPx) || !Float.isFinite(density) || !Float.isFinite(rotationY)
                 || widthPx <= 0 || density <= 0) return 0f;
@@ -17,21 +15,17 @@ public final class DepthModel {
         if (!Float.isFinite(xFraction) || !Float.isFinite(spanDp) || spanDp <= 0) return 0f;
         float x = Math.max(0f, Math.min(1f, xFraction));
         float depth = spanDp * (farRight ? x : 1f - x);
-        float amount=depth<=ONSET_DEPTH_DP
-                ? ONSET_FRACTION*depth/ONSET_DEPTH_DP
-                : ONSET_FRACTION+(1f-ONSET_FRACTION)*(depth-ONSET_DEPTH_DP)
-                    /(FULL_BLUR_DEPTH_DP-ONSET_DEPTH_DP);
-        return MAX_RADIUS_DP*Math.min(1f,amount);
+        float t = Math.max(0f, Math.min(1f, (depth - FOCUS_DEPTH_DP)
+                / (FULL_BLUR_DEPTH_DP - FOCUS_DEPTH_DP)));
+        return MAX_RADIUS_DP * t * t * (3f - 2f * t);
     }
     /** Inverse of the continuous depth curve, used to partition equal-LOD drawing regions. */
     public static float depthForRadius(float radiusDp) {
         if (radiusDp>MAX_RADIUS_DP) return Float.POSITIVE_INFINITY;
         if (radiusDp<=0f) return FOCUS_DEPTH_DP;
         float fraction=radiusDp/MAX_RADIUS_DP;
-        return fraction<=ONSET_FRACTION
-                ? ONSET_DEPTH_DP*fraction/ONSET_FRACTION
-                : ONSET_DEPTH_DP+(FULL_BLUR_DEPTH_DP-ONSET_DEPTH_DP)
-                    *(fraction-ONSET_FRACTION)/(1f-ONSET_FRACTION);
+        float t=(float)(0.5-Math.sin(Math.asin(1.0-2.0*fraction)/3.0));
+        return FOCUS_DEPTH_DP+t*(FULL_BLUR_DEPTH_DP-FOCUS_DEPTH_DP);
     }
     public static float lodBoundary(float width, float padding, float depth, float span) {
         // The depth map clamps at the content edge, including all transparent padding.
