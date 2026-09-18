@@ -1,0 +1,1 @@
+<resources><string-array name="xposed_scope"><item>com.android.launcher</item></string-array></resources>

@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ColorDuo</string>
+    <string name="instructions">倾斜翻页 · 空间景深\n\n1. 在 LSPosed 中启用 ColorDuo。\n2. 作用域仅勾选系统桌面（com.android.launcher）。\n3. 重启系统桌面或手机。\n4. 桌面 → 翻页效果 → 倾斜。\n\n卡片贴近屏幕的一侧清晰，向屏幕后方倾斜的一侧逐渐虚化。\n\n适配基线：ColorOS 16，桌面 16.6.17。\n实验版本 0.3.2；是否已注入请查看 LSPosed 的 ColorDuo 日志。\n\n恢复：切换其他翻页效果，或禁用模块后重启桌面。</string>
+    <string name="depth_preview_button">预览空间景深</string>
+    <string name="depth_preview_caption">空间景深 · %1$.1f°\n拖动滑块：近侧清晰，远侧模糊；中间归零全清晰。</string>
+    <string name="depth_preview_error">GPU 渲染失败，请查看 ColorDuoPreview 日志。</string>
+</resources>
