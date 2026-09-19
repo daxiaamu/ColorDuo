@@ -1,0 +1,8 @@
+{
+  "channel": "stable",
+  "expiresAt": "2026-12-18T16:18:20Z",
+  "manifestPath": "updates/manifests/stable-1-b64c1b61cc7b9d327296f88e194fc244c02cb4186838838f5d7aad3417c7f160.json",
+  "manifestSha256": "b64c1b61cc7b9d327296f88e194fc244c02cb4186838838f5d7aad3417c7f160",
+  "policyRevision": 1,
+  "schemaVersion": 1
+}

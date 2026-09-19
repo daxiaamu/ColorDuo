@@ -1,0 +1,30 @@
+{
+  "changelog": "## ColorDuo v0.5.0 · 双效果实时切换\n\n模块内新增两种效果选择：\n\n- **效果1 · 高斯景深**：保留首个 Release v0.3.2 的渲染效果和距离曲线。\n- **效果2 · 磨砂雾化**：细颗粒散射与微折射；距离 0 清晰，3dp 达到 20% 雾化，之后线性增强。默认选择效果2。\n\n选择自动保存，通过配置通知即时应用到桌面，**切换效果无需重启桌面**。模块内预览跟随当前选择。\n\n### 安装\n\n安装附件 APK，在 LSPosed 启用 ColorDuo，作用域仅勾选系统桌面 com.android.launcher，桌面翻页效果选择「倾斜」。\n\n**首次安装或升级 APK 后仍需重启一次桌面或手机**，使新代码加载；之后切换效果1/效果2无需重启。切换时纹理缓存异步准备，首次翻页可能短暂显示原生效果。\n\n已验证 Android 16 / ColorOS 16（V16.1.0），OplusLauncher 16.6.17（160060017）；其他版本未验证。附件为开发签名实验包，versionCode 12，与 v0.3.2 官方附件签名一致，可覆盖更新。\n\n### 验证\n\n- 构建及 15 项单元测试通过；Android Lint 0 errors，存在 warnings。\n- 实机通过按钮在两种效果之间切换，桌面进程保持不变；模块进程关闭后设置仍保留。\n- 每种效果各 8 次 550ms 双向翻页：效果1 P90/P95 7/7ms，GPU P90 3ms；效果2 P90/P95 7/8ms，GPU P90 4ms。仅为短时测量，不保证所有负载下稳定满帧。\n\n### 已知限制\n\n翻页期间小组件使用缓存快照，结束后恢复实时内容。首次加载、缓存时效、复杂部件及长期内存表现仍需进一步验证。若桌面异常，请禁用或卸载模块，不要清除桌面数据。\n\n签名证书 SHA-256：\n`4929d9e532d1bd29997e2e49672eab3c51c4c171fa5a8620187e373276dc315e`\n\nAPK v2 签名验证通过。附件 SHA256SUMS-0.5.0.txt 提供 APK 文件校验值。\r\n",
+  "channel": "stable",
+  "maxForcedVersionCode": 0,
+  "policyRevision": 1,
+  "publishedAt": "2026-09-18T20:01:17Z",
+  "releaseUrl": "https://github.com/daxiaamu/ColorDuo/releases/tag/v0.5.0",
+  "schemaVersion": 1,
+  "sha256": "00b7817340537b792d4297a49ccc7bd1c3f358c495a6257cb94c9f38cc969065",
+  "size": 2500488,
+  "url": "https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+  "urls": [
+    "https://gh.jasonzeng.dev/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://gh-proxy.org/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://v6.gh-proxy.org/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://ghp.keleyaa.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://gh-proxy.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://gh.monlor.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://ghfast.top/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://xget.xi-xu.me/gh/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://gh.3w.pm/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://ghproxy.vip/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://v6.gh-proxy.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://gh.llkk.cc/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://ghproxy.net/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk",
+    "https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.0/ColorDuo-0.5.0-debug.apk"
+  ],
+  "versionCode": 12,
+  "versionName": "0.5.0"
+}
