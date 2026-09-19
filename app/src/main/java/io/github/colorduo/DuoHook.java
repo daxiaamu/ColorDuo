@@ -14,7 +14,7 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
-/** Adapter inspected against OplusLauncher 16.6.17 (160060017). */
+/** Adapter inspected against OplusLauncher 16.6.17 and 17.3.9. */
 public final class DuoHook implements IXposedHookLoadPackage {
     private static final String SLANT = "com.android.launcher.effect.agent.SlantEffectAgent";
     private final WeakHashMap<View, PageState> active = new WeakHashMap<>();
@@ -58,6 +58,10 @@ public final class DuoHook implements IXposedHookLoadPackage {
                     }
                     startup.runWhenReady(ready, () -> {
                         install(pkg.classLoader);
+                        try {
+                            android.content.pm.PackageInfo info=activity.getPackageManager().getPackageInfo(activity.getPackageName(),0);
+                            XposedBridge.log("ColorDuo launcher="+info.versionName+" ("+info.getLongVersionCode()+") sdk="+android.os.Build.VERSION.SDK_INT);
+                        } catch (Exception ignored) { /* Version logging must not disable rendering. */ }
                         activity.getWindow().getDecorView().postDelayed(() -> {
                             if (failed || activity.isDestroyed()) return;
                             try { warmPages((ViewGroup) XposedHelpers.callMethod(activity, "getWorkspace"), true); }
@@ -66,37 +70,30 @@ public final class DuoHook implements IXposedHookLoadPackage {
                     });
                 }
             });
-            XposedBridge.log("ColorDuo 0.5.0: waiting for launcher onPostResume");
+            XposedBridge.log("ColorDuo 0.5.1-beta.1: waiting for launcher onPostResume");
         } catch (Throwable error) { disable(error); }
     }
 
     private void install(ClassLoader loader) {
         try {
-            Class<?> slant = XposedHelpers.findClass(SLANT, loader);
-            Class<?> base = slant.getSuperclass();
-            Class<?> workspace = XposedHelpers.findClass("com.android.launcher3.OplusWorkspace", loader);
-            Class<?> workspaceBase = XposedHelpers.findClass("com.android.launcher3.Workspace", loader);
-            Class<?> states = XposedHelpers.findClass("com.android.launcher3.LauncherState", loader);
-            workspaceField = XposedHelpers.findField(base, "mWorkspace");
-            launcherField = XposedHelpers.findField(base, "mLauncher");
-            rangeMethod = XposedHelpers.findMethodExact(workspace, "getVisibleChildrenRange");
-            switchingMethod = XposedHelpers.findMethodExact(workspaceBase, "isSwitchingState");
-            interceptMethod = XposedHelpers.findMethodExact(base, "interceptEffectWhenSwitchingState");
-            normalStateField = XposedHelpers.findField(states, "NORMAL");
-            stateMethod = XposedHelpers.findMethodExact(
-                    XposedHelpers.findClass("com.android.launcher3.statemanager.StatefulActivity", loader),
-                    "isInState", XposedHelpers.findClass("com.android.launcher3.statemanager.BaseState", loader));
+            LauncherBindings bindings=new LauncherBindings(loader);
+            workspaceField=bindings.workspaceField;
+            launcherField=bindings.launcherField;
+            normalStateField=bindings.normalStateField;
+            rangeMethod=bindings.rangeMethod;
+            switchingMethod=bindings.switchingMethod;
+            interceptMethod=bindings.interceptMethod;
+            stateMethod=bindings.stateMethod;
             XC_MethodHook clear = new XC_MethodHook() {
                 @Override protected void beforeHookedMethod(MethodHookParam p) { clearAll(); }
             };
-            XposedHelpers.findAndHookMethod(workspace, "onPageBeginTransition", new XC_MethodHook() {
+            XposedBridge.hookMethod(bindings.beginMethod, new XC_MethodHook() {
                 @Override protected void afterHookedMethod(MethodHookParam p) {
                     pageTransition = true; warmGeneration++; transitionDraws=0;
                     if (!failed) warmPages((ViewGroup)p.thisObject, false);
                 }
             });
-            XposedHelpers.findAndHookMethod("com.android.launcher3.CellLayout", loader,
-                    "dispatchDraw", Canvas.class, new XC_MethodHook() {
+            XposedBridge.hookMethod(bindings.drawMethod, new XC_MethodHook() {
                 @Override protected void beforeHookedMethod(MethodHookParam p) {
                     if (failed || depthRenderer==null || depthRenderer.isRecording()) return;
                     View page=(View)p.thisObject;
@@ -109,8 +106,7 @@ public final class DuoHook implements IXposedHookLoadPackage {
             });
             // Workspace requests hardware layers again on scroll. Do not allocate a clipped
             // intermediate surface for a page already backed by our cached GPU textures.
-            XposedHelpers.findAndHookMethod("com.android.launcher3.CellLayout", loader,
-                    "enableHardwareLayer", boolean.class, new XC_MethodHook() {
+            XposedBridge.hookMethod(bindings.hardwareMethod, new XC_MethodHook() {
                 @Override protected void beforeHookedMethod(MethodHookParam p) {
                     PageState state=active.get((View)p.thisObject);
                     if (state==null || failed) return;
@@ -119,9 +115,9 @@ public final class DuoHook implements IXposedHookLoadPackage {
                 }
             });
             // Install cleanup first. Never modify an effect setting or guess an effect ID.
-            XposedHelpers.findAndHookMethod(slant, "restoreParameters", clear);
-            XposedHelpers.findAndHookMethod(base, "recycle", clear);
-            XposedHelpers.findAndHookMethod(workspace, "onPageEndTransition", new XC_MethodHook() {
+            XposedBridge.hookMethod(bindings.restoreMethod, clear);
+            XposedBridge.hookMethod(bindings.recycleMethod, clear);
+            XposedBridge.hookMethod(bindings.endMethod, new XC_MethodHook() {
                 @Override protected void afterHookedMethod(MethodHookParam p) {
                     clearAll(); pageTransition = false;
                     if (transitionDraws>0) android.util.Log.i("ColorDuoDraw","ColorDuo: transition GPU draws="+transitionDraws);
@@ -133,25 +129,23 @@ public final class DuoHook implements IXposedHookLoadPackage {
                     }, 180);
                 }
             });
-            XposedHelpers.findAndHookMethod(workspaceBase, "onDetachedFromWindow", new XC_MethodHook() {
+            XposedBridge.hookMethod(bindings.detachMethod, new XC_MethodHook() {
                 @Override protected void beforeHookedMethod(MethodHookParam p) {
                     clearAll(); warmGeneration++;
                     if (depthRenderer!=null) { depthRenderer.release(); depthRenderer=null; }
                 }
             });
-            XposedHelpers.findAndHookMethod(workspaceBase, "setState", states, clear);
-            XposedHelpers.findAndHookMethod(workspaceBase, "setStateWithAnimation", states,
-                    XposedHelpers.findClass("com.android.launcher3.states.StateAnimationConfig", loader),
-                    XposedHelpers.findClass("com.android.launcher3.anim.PendingAnimation", loader), clear);
-            XposedHelpers.findAndHookMethod("com.android.launcher.effect.EffectController", loader, "resetEffect", clear);
-            XposedHelpers.findAndHookMethod(slant, "applySlantEffect", int.class, new XC_MethodHook() {
+            XposedBridge.hookMethod(bindings.setStateMethod, clear);
+            XposedBridge.hookMethod(bindings.setStateAnimationMethod, clear);
+            XposedBridge.hookMethod(bindings.resetMethod, clear);
+            XposedBridge.hookMethod(bindings.applyMethod, new XC_MethodHook() {
                 @Override protected void afterHookedMethod(MethodHookParam p) {
                     if (failed || p.hasThrowable()) { clearAll(); return; }
                     try { update(p.thisObject); }
                     catch (Throwable error) { disable(error); }
                 }
             });
-            XposedBridge.log("ColorDuo 0.5.0: Slant adapter installed after launcher resume (baseline 16.6.17)");
+            XposedBridge.log("ColorDuo 0.5.1-beta.1: Slant adapter installed after launcher resume (contract checked; baselines 16.6.17 / 17.3.9)");
         } catch (Throwable error) { disable(error); }
     }
 

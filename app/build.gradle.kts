@@ -6,9 +6,11 @@ android {
         applicationId = "io.github.colorduo"
         minSdk = 33
         targetSdk = 36
-        versionCode = 12
-        versionName = "0.5.0"
+        versionCode = 14
+        versionName = "0.5.1-beta.1"
+        buildConfigField("boolean", "UPDATE_BETA", versionName!!.contains("-").toString())
     }
+    buildFeatures { buildConfig = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -17,4 +19,5 @@ android {
 dependencies {
     compileOnly("de.robv.android.xposed:api:82")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

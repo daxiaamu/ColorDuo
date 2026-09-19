@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 public final class MainActivity extends Activity {
     private RadioGroup choices;
+    private io.github.colorduo.update.UpdateUi updater;
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         LinearLayout root=new LinearLayout(this);
@@ -48,10 +49,14 @@ public final class MainActivity extends Activity {
         TextView body=new TextView(this);
         body.setTextSize(16); body.setLineSpacing(8,1); body.setText(R.string.instructions);
         body.setPadding(0,padding,0,0); root.addView(body);
+        updater=new io.github.colorduo.update.UpdateUi(this,root);
         ScrollView scroll=new ScrollView(this); scroll.addView(root); setContentView(scroll);
     }
+    @Override protected void onPause(){if(updater!=null)updater.pause();super.onPause();}
+    @Override protected void onDestroy(){if(updater!=null)updater.destroy();super.onDestroy();}
     @Override protected void onResume() {
         super.onResume();
+        if(updater!=null)updater.resume();
         choices.check(EffectSettings.readLocal(this)==EffectMode.GAUSSIAN?R.id.effect_gaussian:R.id.effect_frost);
     }
 }

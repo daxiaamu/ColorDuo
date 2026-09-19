@@ -1,0 +1,4 @@
+{
+  "stable": {"policyRevision": 1, "maxForcedVersionCode": 0, "reason": "Initial stable channel; no forced updates."},
+  "beta": {"policyRevision": 1, "maxForcedVersionCode": 0, "reason": "Initial beta channel; no forced updates."}
+}

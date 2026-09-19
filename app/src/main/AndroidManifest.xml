@@ -1,10 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application android:label="@string/app_name" android:icon="@drawable/ic_launcher" android:allowBackup="false" android:supportsRtl="true" android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <meta-data android:name="xposedmodule" android:value="true" />
         <meta-data android:name="xposeddescription" android:value="ColorOS 16 倾斜翻页的渐进虚化" />
         <meta-data android:name="xposedminversion" android:value="82" />
         <meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />
         <provider android:name=".EffectSettingsProvider" android:authorities="io.github.colorduo.settings" android:exported="true" />
+        <provider android:name=".update.UpdateFileProvider" android:authorities="io.github.colorduo.updates" android:exported="false" android:grantUriPermissions="true" />
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

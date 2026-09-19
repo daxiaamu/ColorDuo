@@ -16,8 +16,9 @@ try {
     $junit = (Get-ChildItem "$deps/junit/junit/4.13.2" -Filter '*.jar' -Recurse | Select-Object -First 1).FullName
     $hamcrest = (Get-ChildItem "$deps/org.hamcrest/hamcrest-core/1.3" -Filter '*.jar' -Recurse | Select-Object -First 1).FullName
     if (-not $junit -or -not $hamcrest) { throw 'JUnit dependencies missing.' }
-    $classpath = "app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes;app/build/intermediates/javac/debugUnitTest/compileDebugUnitTestJavaWithJavac/classes;$junit;$hamcrest"
+    $json = (Get-ChildItem "$deps/org.json/json/20240303" -Filter "*.jar" -Recurse | Select-Object -First 1).FullName
+    $classpath = "app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes;app/build/intermediates/javac/debugUnitTest/compileDebugUnitTestJavaWithJavac/classes;$junit;$hamcrest;$json"
     $javaExe = if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME 'bin/java.exe' } else { 'java' }
-    & $javaExe -cp $classpath org.junit.runner.JUnitCore io.github.colorduo.StartupGateTest io.github.colorduo.DepthModelTest io.github.colorduo.EffectModeTest
+    & $javaExe -cp $classpath org.junit.runner.JUnitCore io.github.colorduo.StartupGateTest io.github.colorduo.DepthModelTest io.github.colorduo.EffectModeTest io.github.colorduo.LauncherReflectionTest io.github.colorduo.update.UpdateTest
     if ($LASTEXITCODE -ne 0) { throw 'Curve tests failed.' }
 } finally { Pop-Location }
