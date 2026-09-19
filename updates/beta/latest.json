@@ -1,0 +1,8 @@
+{
+  "channel": "beta",
+  "expiresAt": "2026-12-18T16:18:50Z",
+  "manifestPath": "updates/manifests/beta-1-de192fa37e969907d08fac4e6748d9f60d4538e14fdd7889ca12c2bb727146e8.json",
+  "manifestSha256": "de192fa37e969907d08fac4e6748d9f60d4538e14fdd7889ca12c2bb727146e8",
+  "policyRevision": 1,
+  "schemaVersion": 1
+}

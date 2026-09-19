@@ -1,0 +1,30 @@
+{
+  "changelog": "## 更新内容\n\n- 新增应用内自动/手动检查更新，可选择接收预发布版本。\n- 支持多 CDN 下载、下载进度，以及安装前 SHA-256、包名、版本号和签名校验。\n- 新增 ColorOS 17 桌面 17.3.9 的静态适配与 Hook 结构检查，完善状态切换时的渲染清理。\n- 保留效果1、效果2实时切换。\n\n## 使用方法\n\n安装 APK，在 LSPosed 中启用 ColorDuo，作用域勾选系统桌面，将桌面翻页效果设置为「倾斜」。首次安装或升级后重启桌面或手机。后续可在模块设置页检查更新。\n\n## 验证范围\n\n构建、Android Lint、40 项客户端测试和 7 项发布脚本测试通过。ColorOS 17 尚未完成原生系统真机验证，本次为预发布版；不包含系统桌面替换或跨版本移植。\r\n",
+  "channel": "beta",
+  "maxForcedVersionCode": 0,
+  "policyRevision": 1,
+  "publishedAt": "2026-09-19T16:17:07Z",
+  "releaseUrl": "https://github.com/daxiaamu/ColorDuo/releases/tag/v0.5.1-beta.1",
+  "schemaVersion": 1,
+  "sha256": "0050828cd1ee75589f41ad4d848a7c98b794f3dcec29bd846c718bc5feb78d3f",
+  "size": 2605087,
+  "url": "https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+  "urls": [
+    "https://ghp.keleyaa.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://gh.jasonzeng.dev/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://gh.monlor.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://gh.3w.pm/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://gh-proxy.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://gh.llkk.cc/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://xget.xi-xu.me/gh/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://v6.gh-proxy.org/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://gh-proxy.org/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://v6.gh-proxy.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://ghproxy.vip/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://ghfast.top/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://ghproxy.net/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk",
+    "https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.1-beta.1/ColorDuo-0.5.1-beta.1.apk"
+  ],
+  "versionCode": 14,
+  "versionName": "0.5.1-beta.1"
+}
