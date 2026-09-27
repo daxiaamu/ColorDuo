@@ -19,7 +19,7 @@
 
 **切换效果实时生效、自动保存，无需重启桌面。** 首次安装或升级模块后，仍需重启一次桌面或手机。
 
-已验证：ColorOS 16 / Android 16，系统桌面 16.6.17。ColorOS 17 桌面 17.3.9 已完成静态适配，待真机验证（[适配说明](docs/coloros17-compatibility.md)）。
+支持 ColorOS 16 / 17。ColorOS 17 已获用户真机使用确认（[适配说明](docs/coloros17-compatibility.md)）。
 
 如需停用，在 LSPosed 中禁用模块并重启桌面；出现异常时无需清除桌面数据。
 

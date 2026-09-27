@@ -1,4 +1,4 @@
-# ColorOS 17 适配检查
+# ColorOS 17 适配说明
 
 目标 OTA：PLK110_11.C.61_1610_202609130501，ColorOS 17.0.0.100(SP09CN01)，Android 17 / SDK 37。
 
@@ -21,9 +21,9 @@ OplusWorkspace 的状态切换存在提前返回分支，可能不调用 Workspa
 ## 验证范围
 
 - 16.6.17 和 17.3.9 的 APK 各通过 25 项静态结构检查。
-- 0.5.1 编译与 Android Lint 完成，21 项单元测试通过。
+- 0.5.1 正式版编译与 Android Lint 完成，40 项客户端测试和 7 项发布脚本测试通过。
 - 新增测试覆盖子类提前返回、继承成员、错误签名拒绝以及元数据读取不触发静态初始化。
-- **尚未进行 ColorOS 17 真机注入、实时切换、帧率或长期稳定性测试。静态检查不等于运行兼容性保证。**
+- 2026-09-27，用户确认模块支持 ColorOS 17，据此发布 0.5.1 正式版。该确认未附具体机型、桌面版本或帧率记录，不扩展为所有版本与设备的测试结论。
 
 复核命令（APK 使用 apktool 解码后）：
 
@@ -37,4 +37,4 @@ python scripts/verify_launcher_contract.py path/to/decoded-launcher --json contr
 
 一加15 / PLK110_16.0.10.500(CN01) 上，17.3.9 的普通安装被 OSDK 校验拒绝（minOsdkVersion=40.23）。虽然 APK 的 minSdkVersion=35，通过系统挂载替换后仍因缺少 `android.window.TaskSnapshotListener` 与 `android.gui.EarlyWakeupInfo` 而无法启动。已回退原桌面。
 
-因此本模块的 ColorOS 17 静态适配不包含将 ColorOS 17 桌面移植到 ColorOS 16。预发布版只提供 ColorDuo APK，不能替代系统升级。
+因此本模块的 ColorOS 17 支持不包含将 ColorOS 17 桌面移植到 ColorOS 16。发布包只提供 ColorDuo APK，不能替代系统升级。

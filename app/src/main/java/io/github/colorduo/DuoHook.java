@@ -70,7 +70,7 @@ public final class DuoHook implements IXposedHookLoadPackage {
                     });
                 }
             });
-            XposedBridge.log("ColorDuo 0.5.1-beta.1: waiting for launcher onPostResume");
+            XposedBridge.log("ColorDuo 0.5.1: waiting for launcher onPostResume");
         } catch (Throwable error) { disable(error); }
     }
 
@@ -145,7 +145,7 @@ public final class DuoHook implements IXposedHookLoadPackage {
                     catch (Throwable error) { disable(error); }
                 }
             });
-            XposedBridge.log("ColorDuo 0.5.1-beta.1: Slant adapter installed after launcher resume (contract checked; baselines 16.6.17 / 17.3.9)");
+            XposedBridge.log("ColorDuo 0.5.1: Slant adapter installed after launcher resume (contract checked; baselines 16.6.17 / 17.3.9)");
         } catch (Throwable error) { disable(error); }
     }
 

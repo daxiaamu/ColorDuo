@@ -1,4 +1,12 @@
 {
-  "stable": {"policyRevision": 1, "maxForcedVersionCode": 0, "reason": "Initial stable channel; no forced updates."},
-  "beta": {"policyRevision": 1, "maxForcedVersionCode": 0, "reason": "Initial beta channel; no forced updates."}
+  "stable": {
+    "policyRevision": 2,
+    "maxForcedVersionCode": 0,
+    "reason": "Release 0.5.1 with user-confirmed ColorOS 17 support; forced boundary unchanged."
+  },
+  "beta": {
+    "policyRevision": 1,
+    "maxForcedVersionCode": 0,
+    "reason": "Initial beta channel; no forced updates."
+  }
 }

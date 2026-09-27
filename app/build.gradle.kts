@@ -6,8 +6,8 @@ android {
         applicationId = "io.github.colorduo"
         minSdk = 33
         targetSdk = 36
-        versionCode = 14
-        versionName = "0.5.1-beta.1"
+        versionCode = 15
+        versionName = "0.5.1"
         buildConfigField("boolean", "UPDATE_BETA", versionName!!.contains("-").toString())
     }
     buildFeatures { buildConfig = true }
