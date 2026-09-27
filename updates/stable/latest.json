@@ -1,8 +1,8 @@
 {
   "channel": "stable",
-  "expiresAt": "2026-12-18T16:18:20Z",
-  "manifestPath": "updates/manifests/stable-1-b64c1b61cc7b9d327296f88e194fc244c02cb4186838838f5d7aad3417c7f160.json",
-  "manifestSha256": "b64c1b61cc7b9d327296f88e194fc244c02cb4186838838f5d7aad3417c7f160",
-  "policyRevision": 1,
+  "expiresAt": "2026-12-26T13:41:15Z",
+  "manifestPath": "updates/manifests/stable-2-ad950d035dfcecbbf4779a325055e48b8baa547b9de8dacbc52a33a919e8c1d0.json",
+  "manifestSha256": "ad950d035dfcecbbf4779a325055e48b8baa547b9de8dacbc52a33a919e8c1d0",
+  "policyRevision": 2,
   "schemaVersion": 1
 }
