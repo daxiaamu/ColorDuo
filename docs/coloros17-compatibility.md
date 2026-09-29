@@ -38,3 +38,29 @@ python scripts/verify_launcher_contract.py path/to/decoded-launcher --json contr
 一加15 / PLK110_16.0.10.500(CN01) 上，17.3.9 的普通安装被 OSDK 校验拒绝（minOsdkVersion=40.23）。虽然 APK 的 minSdkVersion=35，通过系统挂载替换后仍因缺少 `android.window.TaskSnapshotListener` 与 `android.gui.EarlyWakeupInfo` 而无法启动。已回退原桌面。
 
 因此本模块的 ColorOS 17 支持不包含将 ColorOS 17 桌面移植到 ColorOS 16。发布包只提供 ColorDuo APK，不能替代系统升级。
+
+
+## 一加15 C.75 / 桌面17.3.12（2026-09-29）
+
+从 NAS 官方 ROM 归档中的 `ColorOS PLK110_17.0.0.102(CN01) C.75/558a35a9c0714d4f852a02b28977118f.zip` 按需提取完整 `system_ext` 分区，取得原始桌面 APK：
+
+- 版本：17.3.12（170030012），最低 SDK 35，目标 SDK 37。
+- APK SHA-256：`22fcfa154961d7494bf641874a6e9c92b90373cb595ae7b68061312f742e0388`。
+- 签名 SHA-256：`e49802409584ce53152a9000820a51e4fa8a723b7bcc263e335240acf100bf9e`，签名验证通过。
+- 分区构建时间：2026-09-24，系统指纹：`oplus/ossi/ossi:17/CP2A.260605.016/1790197155508:user/release-keys`。
+
+反编译完成后，25 项静态契约检查全部通过。去掉调试行号后，`SlantEffectAgent.applySlantEffect`、`restoreParameters`、`EffectAgent.interceptEffectWhenSwitchingState`、`recycle`、`CellLayout.dispatchDraw`、`enableHardwareLayer`、`OplusCellLayout.enableHardwareLayer`、`OplusWorkspace.setState`、`onDetachedFromWindow` 与 17.3.9 一致。可见页面范围方法只变更日志辅助类引用，页面切换回调存在辅助类混淆名称变化，模块依赖的入口与签名保持不变。
+
+静态检查只确认入口和签名仍存在，不能证明运行时效果有效。用户实测 0.5.1 无效果，连接真机后定位到桌面开启统一渲染（`sys.unirender.com.android.launcher.enable=1`）：原有 `HardwareRenderer + ImageReader` 在提交返回成功后仍拿不到图像；增加等待及改用 `HardwareBufferRenderer` 均未解决。独立预览进程正常，临时关闭桌面的统一渲染可恢复纹理与绘制。对照测试结束已恢复该属性为 `1`。
+
+0.5.2-beta.1 在 Android 17 的注入桌面进程中使用系统 `HardwareRenderer.createHardwareBitmap(RenderNode, int, int)` 快照入口构建 GPU 纹理。初始化时校验方法签名；此非 SDK 接口依赖 LSPosed 的隐藏 API 访问能力，仅在注入进程调用。独立预览和 Android 16 保留原路径。纹理构建仍在后台执行，翻页继续使用缓存多级纹理，不修改模糊曲线、颗粒或系统统一渲染开关。
+
+实机验证：一加15 / PLK110_17.0.0.102(CN01)，桌面17.3.12。统一渲染开启时成功生成纹理，捕获到倾斜翻页的磨砂虚化中间帧；效果1与效果2均有 GPU 绘制记录，并验证切换模式无需重启桌面。未把本次结果扩展为其他 ColorOS 17 构建或设备的兼容保证，也未作完整帧率基准测试。
+
+## 自适应适配（0.5.2-beta.2）
+
+渲染入口不再按 Android 版本号硬选。在 LSPosed 桌面进程中按签名探测系统硬件快照入口；不存在或被限制时，仍允许公开的 ImageReader 路径工作。两个效果共用后端选择器。每个候选入口首次使用前绘制一个微小测试图，并读回验证颜色与透明区域；实际页面输出还校验尺寸和硬件位图类型。成功的入口会被记住，失败时尝试另一入口，连续失败按 2/4/8/16/30 秒退避，避免逐帧重试。失败的页面缓存可重新准备，不再永久卡在取消状态。
+
+Hook 仍以已确认的倾斜代理、页面类型和关键状态接口为语义边界，不扫描并猜测任意混淆方法。允许中间继承层、桌面 Activity 子类，按实际 Workspace、页面和代理类解析具体方法；页面新增 dispatchDraw 重写时不再整模块拒绝。解析同时校验参数、返回值及实例方法属性。页面适配失败保留原生页面；安装失败撤销相应 Hook，模块停用时恢复裁剪和硬件层。未知版本如果保留这些语义契约即可尝试适配；类名、关键字段或行为契约变化仍可能需要人工适配。
+
+验证：48 项客户端测试与 Android Lint 通过，三个已保存桌面版本（16.6.17 / 17.3.9 / 17.3.12）各通过25项静态检查。一加15 C.75 实测平台快照后端通过颜色/透明度探针，动态页面 Hook 正常绘制；独立预览的公开 ImageReader 后端也通过探针。自动回退、冷却重试、恢复及方法签名拒绝有单元测试覆盖；尚未在其他未知系统版本上实测。

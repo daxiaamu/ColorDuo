@@ -8,39 +8,40 @@ import java.lang.reflect.Modifier;
 
 /** Contract checked against OplusLauncher 16.6.17 and 17.3.9 before installing any host hooks. */
 final class LauncherBindings {
-    final Class<?> slant,base,workspace,workspaceBase,states;
+    final Class<?> slant,base,workspace,workspaceBase,states,cell;
     final Field workspaceField,launcherField,normalStateField;
     final Method rangeMethod,switchingMethod,stateMethod,interceptMethod;
     final Method detachMethod,setStateMethod,setStateAnimationMethod;
     final Method beginMethod,endMethod,drawMethod,hardwareMethod,restoreMethod,recycleMethod,resetMethod,applyMethod;
-    LauncherBindings(ClassLoader loader) throws ReflectiveOperationException {
+    LauncherBindings(ClassLoader loader,Class<?> actualWorkspace,Class<?> actualLauncher) throws ReflectiveOperationException {
         slant=load(loader,"com.android.launcher.effect.agent.SlantEffectAgent");
         base=load(loader,"com.android.launcher.effect.EffectAgent");
-        workspace=load(loader,"com.android.launcher3.OplusWorkspace");
+        Class<?> declaredWorkspace=load(loader,"com.android.launcher3.OplusWorkspace");
+        workspace=actualWorkspace;
         workspaceBase=load(loader,"com.android.launcher3.Workspace");
         states=load(loader,"com.android.launcher3.LauncherState");
         Class<?> launcher=load(loader,"com.android.launcher.Launcher");
-        Class<?> cell=load(loader,"com.android.launcher3.CellLayout");
-        Class<?> oplusCell=load(loader,"com.android.launcher3.OplusCellLayout");
+        if (!launcher.isAssignableFrom(actualLauncher) || !declaredWorkspace.isAssignableFrom(workspace))
+            throw new IllegalStateException("Unexpected launcher/workspace instance");
+        cell=load(loader,"com.android.launcher3.CellLayout");
         Class<?> controller=load(loader,"com.android.launcher.effect.EffectController");
-        Class<?> stateful=load(loader,"com.android.launcher3.statemanager.StatefulActivity");
         Class<?> baseState=load(loader,"com.android.launcher3.statemanager.BaseState");
         Class<?> config=load(loader,"com.android.launcher3.states.StateAnimationConfig");
         Class<?> animation=load(loader,"com.android.launcher3.anim.PendingAnimation");
-        if (slant.getSuperclass()!=base || !workspaceBase.isAssignableFrom(workspace)
-                || !ViewGroup.class.isAssignableFrom(cell) || !cell.isAssignableFrom(oplusCell))
+        if (!base.isAssignableFrom(slant) || !workspaceBase.isAssignableFrom(workspace)
+                || !ViewGroup.class.isAssignableFrom(cell))
             throw new IllegalStateException("Unsupported launcher class hierarchy");
-        workspaceField=LauncherReflection.field(base,"mWorkspace",workspace);
+        workspaceField=LauncherReflection.field(base,"mWorkspace",declaredWorkspace);
         launcherField=LauncherReflection.field(base,"mLauncher",launcher);
         normalStateField=LauncherReflection.field(states,"NORMAL",states);
         if (!Modifier.isStatic(normalStateField.getModifiers()))
             throw new IllegalStateException("LauncherState.NORMAL must be static");
         LauncherReflection.field(workspace,"mEffectController",controller);
         rangeMethod=LauncherReflection.method(workspace,"getVisibleChildrenRange",int[].class);
-        switchingMethod=LauncherReflection.method(workspaceBase,"isSwitchingState",boolean.class);
+        switchingMethod=LauncherReflection.method(workspace,"isSwitchingState",boolean.class);
         interceptMethod=LauncherReflection.method(base,"interceptEffectWhenSwitchingState",boolean.class);
-        stateMethod=LauncherReflection.method(stateful,"isInState",boolean.class,baseState);
-        LauncherReflection.method(launcher,"getWorkspace",workspace);
+        stateMethod=LauncherReflection.method(actualLauncher,"isInState",boolean.class,baseState);
+        LauncherReflection.method(launcher,"getWorkspace",declaredWorkspace);
         LauncherReflection.method(controller,"getEffectAgent",base);
         resetMethod=LauncherReflection.method(controller,"resetEffect",void.class);
         applyMethod=LauncherReflection.method(slant,"applySlantEffect",void.class,int.class);
@@ -49,8 +50,6 @@ final class LauncherBindings {
         beginMethod=LauncherReflection.method(workspace,"onPageBeginTransition",void.class);
         endMethod=LauncherReflection.method(workspace,"onPageEndTransition",void.class);
         drawMethod=LauncherReflection.method(cell,"dispatchDraw",void.class,Canvas.class);
-        if (!LauncherReflection.method(oplusCell,"dispatchDraw",void.class,Canvas.class).equals(drawMethod))
-            throw new IllegalStateException("Unsupported OplusCellLayout drawing override");
         hardwareMethod=LauncherReflection.method(cell,"enableHardwareLayer",void.class,boolean.class);
         // Resolve the concrete overrides. ColorOS 17 can return before calling Workspace.
         detachMethod=LauncherReflection.method(workspace,"onDetachedFromWindow",void.class);

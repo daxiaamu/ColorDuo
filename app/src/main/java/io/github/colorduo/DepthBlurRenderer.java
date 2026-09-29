@@ -1,9 +1,6 @@
 package io.github.colorduo;
 
 import android.graphics.*;
-import android.hardware.HardwareBuffer;
-import android.media.Image;
-import android.media.ImageReader;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -110,6 +107,7 @@ public final class DepthBlurRenderer implements PageRenderer {
         final int width, height, padding, textureWidth, textureHeight;
         final long created = SystemClock.uptimeMillis();
         long lastUsed = created;
+        long retryAt;
         volatile boolean cancelled;
         RuntimeShader shader;
         RuntimeShader[] strips;
@@ -126,7 +124,8 @@ public final class DepthBlurRenderer implements PageRenderer {
     public void prepare(View page, boolean refresh) {
         if (stopped || page == null || page.getWidth() <= 0 || page.getHeight() <= 0) return;
         Pyramid old = pages.get(page);
-        if (old != null && old.width == page.getWidth() && old.height == page.getHeight()
+        if (old != null && old.cancelled && SystemClock.uptimeMillis()<old.retryAt) return;
+        if (old != null && !old.cancelled && old.width == page.getWidth() && old.height == page.getHeight()
                 && (!refresh || old.pending || SystemClock.uptimeMillis()-old.created < 1000)) return;
         if (old != null) old.cancelled = true;
         // Keep only a few page pyramids, never one cache per desktop indefinitely.
@@ -146,7 +145,10 @@ public final class DepthBlurRenderer implements PageRenderer {
 
     private void record(WeakReference<View> target, Pyramid pyramid) {
         View page = target.get();
-        if (stopped || pyramid.cancelled || page == null || !page.isAttachedToWindow()) return;
+        if (stopped || pyramid.cancelled || page == null) return;
+        if (!page.isAttachedToWindow()) {
+            pyramid.pending=false; pyramid.cancelled=true; return;
+        }
         RenderNode source = new RenderNode("ColorDuo-Source");
         try {
             source.setPosition(0, 0, pyramid.textureWidth, pyramid.textureHeight);
@@ -163,20 +165,16 @@ public final class DepthBlurRenderer implements PageRenderer {
 
     private void build(WeakReference<View> target, Pyramid pyramid, RenderNode source) {
         long started = SystemClock.uptimeMillis();
-        HardwareRenderer renderer = null;
+        GpuRasterizer rasterizer = new GpuRasterizer();
         Bitmap[] bitmaps = new Bitmap[LEVELS+1];
         Paint filter = new Paint(Paint.FILTER_BITMAP_FLAG);
         try {
-            renderer = new HardwareRenderer();
-            renderer.setOpaque(false);
             int w = pyramid.textureWidth, h = pyramid.textureHeight;
             Bitmap previous = null;
             for (int level=0; level<=LEVELS; level++) {
                 if (pyramid.cancelled || stopped) return;
                 int outW=level==0?w:Math.max(1,(w+1)/2), outH=level==0?h:Math.max(1,(h+1)/2);
                 RenderNode node = new RenderNode("ColorDuo-Mip" + (level+1));
-                ImageReader reader = ImageReader.newInstance(outW, outH, PixelFormat.RGBA_8888, 2,
-                        HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE | HardwareBuffer.USAGE_GPU_COLOR_OUTPUT);
                 try {
                     node.setPosition(0,0,outW,outH);
                     if (level>0) node.setRenderEffect(RenderEffect.createRuntimeShaderEffect(new RuntimeShader(SCATTER_PROGRAM),"source"));
@@ -186,22 +184,10 @@ public final class DepthBlurRenderer implements PageRenderer {
                     if (previous==null) canvas.drawRenderNode(source);
                     else canvas.drawBitmap(previous,0f,0f,filter);
                     node.endRecording();
-                    renderer.setSurface(reader.getSurface()); renderer.setContentRoot(node);
-                    renderer.createRenderRequest().setWaitForPresent(true).syncAndDraw();
-                    try (Image image=reader.acquireNextImage()) {
-                        if (image==null) throw new IllegalStateException("GPU mip not produced");
-                        try (HardwareBuffer buffer=image.getHardwareBuffer()) {
-                            if (buffer==null) throw new IllegalStateException("GPU buffer missing");
-                            previous=Bitmap.wrapHardwareBuffer(buffer, ColorSpace.get(ColorSpace.Named.SRGB));
-                            if (previous==null) throw new IllegalStateException("GPU bitmap wrap failed");
-                            // wrapHardwareBuffer may mark RGBA output opaque: preserve premultiplied alpha.
-                            previous.setHasAlpha(true);
-                            bitmaps[level]=previous;
-                        }
-                    }
+                    previous=rasterizer.draw(node,outW,outH);
+                    bitmaps[level]=previous;
                 } finally {
-                    renderer.setSurface(null);
-                    reader.close(); node.discardDisplayList();
+                    node.discardDisplayList();
                 }
                 w=outW; h=outH;
             }
@@ -247,11 +233,12 @@ public final class DepthBlurRenderer implements PageRenderer {
                 if (onReady!=null) onReady.run();
             });
         } catch (Throwable error) { main.post(() -> fail(pyramid,error)); }
-        finally { source.discardDisplayList(); if (renderer!=null) renderer.destroy(); }
+        finally { source.discardDisplayList(); rasterizer.close(); }
     }
 
     private void fail(Pyramid pyramid, Throwable error) {
         pyramid.pending=false; pyramid.cancelled=true;
+        pyramid.retryAt=SystemClock.uptimeMillis()+3000;
         Log.e("ColorDuoPyramid", "GPU pyramid failed; keep native page",error);
     }
 

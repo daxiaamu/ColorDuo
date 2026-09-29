@@ -1,8 +1,8 @@
 {
   "stable": {
-    "policyRevision": 2,
+    "policyRevision": 3,
     "maxForcedVersionCode": 0,
-    "reason": "Release 0.5.1 with user-confirmed ColorOS 17 support; forced boundary unchanged."
+    "reason": "Release 0.5.2 with verified OnePlus 15 ColorOS 17 rendering and capability-based compatibility; no forced updates."
   },
   "beta": {
     "policyRevision": 1,

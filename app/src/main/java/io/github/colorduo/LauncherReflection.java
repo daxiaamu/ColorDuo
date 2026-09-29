@@ -6,13 +6,17 @@ import java.lang.reflect.Method;
 /** Metadata-only lookups: never read launcher static fields during validation. */
 final class LauncherReflection {
     private LauncherReflection() {}
+    static boolean hasNamedSuperclass(Class<?> type,String name) {
+        for(;type!=null;type=type.getSuperclass()) if(type.getName().equals(name)) return true;
+        return false;
+    }
     static Method method(Class<?> owner,String name,Class<?> result,Class<?>... args) throws NoSuchMethodException {
         for (Class<?> type=owner;type!=null;type=type.getSuperclass()) {
             Method method;
             try { method=type.getDeclaredMethod(name,args); }
             catch (NoSuchMethodException absent) { continue; }
-            if (method.getReturnType()!=result)
-                throw new NoSuchMethodException(owner.getName()+"."+name+": unexpected return type");
+            if (method.getReturnType()!=result || java.lang.reflect.Modifier.isStatic(method.getModifiers()))
+                throw new NoSuchMethodException(owner.getName()+"."+name+": unexpected return type or static method");
             method.setAccessible(true);
             return method;
         }

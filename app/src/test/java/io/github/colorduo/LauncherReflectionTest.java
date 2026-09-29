@@ -41,4 +41,12 @@ public class LauncherReflectionTest {
     @Test(expected=NoSuchMethodException.class) public void missingSignatureIsRejected() throws Exception {
         LauncherReflection.method(Child.class,"change",void.class,String.class);
     }
+    static class StaticSignature { public static boolean ready() { return true; } }
+    @Test(expected=NoSuchMethodException.class) public void staticLookalikeCannotBeHookedAsInstance() throws Exception {
+        LauncherReflection.method(StaticSignature.class,"ready",boolean.class);
+    }
+    @Test public void launcherSubclassIsRecognizedWithoutAcceptingUnrelatedActivity() {
+        assertTrue(LauncherReflection.hasNamedSuperclass(Child.class,Base.class.getName()));
+        assertFalse(LauncherReflection.hasNamedSuperclass(StaticSignature.class,Base.class.getName()));
+    }
 }

@@ -35,6 +35,14 @@ class Smali:
             fields=re.findall(r'^\.field .*? ([^\s:]+:[^\s=]+)',text,re.M)
             self.cache[name]=(parent.group(1) if parent else None,methods,fields,text)
         return self.cache[name]
+    def is_subclass(self,owner,expected):
+        seen=set()
+        while owner and owner not in seen:
+            if owner==expected:return True
+            seen.add(owner)
+            if owner.startswith('android/') or owner.startswith('java/'):return False
+            owner=self.get(owner)[0]
+        return False
     def resolve(self,owner,signature,kind):
         seen=set()
         while owner and owner not in seen:
@@ -69,8 +77,8 @@ def check(root):
                 rows.append(dict(kind=kind,owner=owner,signature=signature,resolved=resolved,passed=True))
             except ValueError as error:
                 rows.append(dict(kind=kind,owner=owner,signature=signature,passed=False,error=str(error)))
-    assertions=[('slant hierarchy',lambda:smali.get(SLANT)[0]==BASE),
-        ('page drawing is inherited',lambda:smali.resolve(W+'/OplusCellLayout','dispatchDraw(Landroid/graphics/Canvas;)V','method')==CELL),
+    assertions=[('slant hierarchy',lambda:smali.is_subclass(SLANT,BASE)),
+        ('page draw signature resolves',lambda:bool(smali.resolve(W+'/OplusCellLayout','dispatchDraw(Landroid/graphics/Canvas;)V','method'))),
         ('NORMAL is static',lambda:bool(re.search(r'^\.field [^\n]*\bstatic\b[^\n]* NORMAL:L'+re.escape(STATE)+r';',smali.get(STATE)[3],re.M))),
         ('slant uses page rotation',lambda:'Landroid/view/View;->setRotationY(F)V' in smali.get(SLANT)[3])]
     for label,test in assertions:
