@@ -1,12 +1,12 @@
 {
-  "stable": {
-    "policyRevision": 3,
-    "maxForcedVersionCode": 0,
-    "reason": "Release 0.5.2 with verified OnePlus 15 ColorOS 17 rendering and capability-based compatibility; no forced updates."
-  },
   "beta": {
-    "policyRevision": 1,
     "maxForcedVersionCode": 0,
+    "policyRevision": 1,
     "reason": "Initial beta channel; no forced updates."
+  },
+  "stable": {
+    "maxForcedVersionCode": 0,
+    "policyRevision": 4,
+    "reason": "User requested withdrawal of 0.5.2 after discovering folder backdrop blur regression. Restore 0.5.1 update offer; no forced downgrade."
   }
 }
