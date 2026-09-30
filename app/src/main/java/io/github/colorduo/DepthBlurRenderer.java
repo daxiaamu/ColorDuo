@@ -155,7 +155,10 @@ public final class DepthBlurRenderer implements PageRenderer {
             RecordingCanvas canvas = source.beginRecording(pyramid.textureWidth, pyramid.textureHeight);
             canvas.translate(pyramid.padding,pyramid.padding);
             recording=true;
-            try { page.draw(canvas); } finally { recording=false; source.endRecording(); }
+            try {
+                page.draw(canvas);
+                FolderBackdrop.recordBehind(page,canvas);
+            } finally { recording=false; source.endRecording(); }
             GPU.execute(() -> build(target, pyramid, source));
         } catch (Throwable error) {
             source.discardDisplayList();
@@ -277,6 +280,7 @@ public final class DepthBlurRenderer implements PageRenderer {
         if (!canvas.isHardwareAccelerated()) return false;
         Pyramid pyramid=configure(page);
         if (pyramid==null) return false;
+
         float span=DepthModel.spanDp(page.getWidth(),page.getResources().getDisplayMetrics().density,page.getRotationY());
         boolean farRight=matrix[Matrix.MPERSP_0]>0;
         float width=page.getWidth(), padding=pyramid.padding;
@@ -300,6 +304,7 @@ public final class DepthBlurRenderer implements PageRenderer {
     }
     public void release() {
         stopped=true;
+
         for (Pyramid pyramid:pages.values()) pyramid.cancelled=true;
         pages.clear(); onReady=null;
     }

@@ -6,7 +6,7 @@
   },
   "stable": {
     "maxForcedVersionCode": 0,
-    "policyRevision": 4,
-    "reason": "User requested withdrawal of 0.5.2 after discovering folder backdrop blur regression. Restore 0.5.1 update offer; no forced downgrade."
+    "policyRevision": 5,
+    "reason": "Publish 0.5.3 stable with adaptive rendering and ordinary folder materials in the depth pyramid; no forced updates."
   }
 }
