@@ -1,0 +1,30 @@
+{
+  "changelog": "- 修复翻页时文件夹底板消失、边框过于清晰的问题：普通/大文件夹及小布建议使用普通材质，与图标一起参与深度虚化。\n- 适配一加15最新 ColorOS 17（桌面17.3.12），修复统一渲染开启后翻页无虚化的问题。\n- 渲染路径改为按实际能力自动选择，校验颜色和透明度；失败自动回退，并限频重试。\n- 支持桌面、页面及倾斜代理的子类重写，增强对更多版本的兼容能力。\n- 保留效果1（高斯景深）与效果2（磨砂雾化），可在模块内实时切换。\n\n用法：在 LSPosed 中启用 ColorDuo，作用域仅勾选系统桌面（com.android.launcher），更新后重启桌面或手机，再将桌面翻页效果设为“倾斜”。\n\n一加15 ColorOS 17 已实测；未知版本若关键接口变化，仍可能需要进一步适配。\n\n[【机场推荐：白月光，稳定高速】](https://www.sibker.com/register?invite_code=2XQR1UUz)\n",
+  "channel": "stable",
+  "maxForcedVersionCode": 0,
+  "policyRevision": 5,
+  "publishedAt": "2026-09-30T11:35:44Z",
+  "releaseUrl": "https://github.com/daxiaamu/ColorDuo/releases/tag/v0.5.3",
+  "schemaVersion": 1,
+  "sha256": "ac5f040ea7e257fe0df827c3d4726a82b94c2d6ae58b6cac626232fbc20232c2",
+  "size": 2201015,
+  "url": "https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+  "urls": [
+    "https://gh-proxy.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://gh.jasonzeng.dev/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://ghp.keleyaa.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://gh-proxy.org/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://gh.3w.pm/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://xget.xi-xu.me/gh/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://gh.monlor.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://gh.llkk.cc/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://v6.gh-proxy.org/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://v6.gh-proxy.com/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://ghfast.top/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://ghproxy.vip/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://ghproxy.net/https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk",
+    "https://github.com/daxiaamu/ColorDuo/releases/download/v0.5.3/ColorDuo-0.5.3.apk"
+  ],
+  "versionCode": 20,
+  "versionName": "0.5.3"
+}
