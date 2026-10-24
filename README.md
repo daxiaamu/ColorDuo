@@ -1,5 +1,7 @@
 # ColorDuo
 
+> **项目已归档，停止维护（2026-10-25）。** 不再提供功能更新、问题修复或新系统适配；源码和历史发布版本保留供参考及使用。
+
 为 ColorOS 系统桌面的「倾斜」翻页添加景深效果：近处清晰，远处虚化。
 
 [下载稳定版](https://github.com/daxiaamu/ColorDuo/releases/latest) · [查看预发布版](https://github.com/daxiaamu/ColorDuo/releases)
